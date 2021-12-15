@@ -93,7 +93,7 @@ for(let x = 0; x < map[0].length;x++){
 const start = map[0][0];
 const end = map[map.length-1][map[0].length-1];
 let openSet = [start];
-const closedSet = [];
+const closedSet = new Set();
 const doAstar = ()=>{
 	while(openSet.length !== 0){
 		let winner = 0;
@@ -105,10 +105,10 @@ const doAstar = ()=>{
 		let current = openSet[winner];
 		if(current === end) return current;
 		openSet = openSet.filter(open=>open !== current);
-		closedSet.push(current);
+		closedSet.add(`${current.x},${current.y}`);
 		for(let i = 0; i < current.neighbors.length; i++){
 			let neighbor = current.neighbors[i];
-			if(closedSet.includes(neighbor)) continue;
+			if(closedSet.has(`${neighbor.x},${neighbor.y}`)) continue;
 			const tempG = (current.g === undefined)?neighbor.danger:current.g+neighbor.danger;
 			if(tempG >= neighbor.g)
 				continue;
