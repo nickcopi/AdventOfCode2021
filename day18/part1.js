@@ -32,21 +32,108 @@ const readTree = (root)=>{
 
 const trees = numbers.map(number=>buildTree(number, new Node(number)));
 
+
+const addLeftMost = (node,value)=>{
+	if(!node.parent) return;
+	if(node === node.parent.children[0]) return addLeftMost(node.parent,value);
+	return rightAdd(node.parent.children[0],value);
+}
+
+const addRightMost = (node,value)=>{
+	if(!node.parent) return;
+	if(node === node.parent.children[1]) return addRightMost(node.parent,value);
+	return leftAdd(node.parent.children[1],value);
+}
+
+const leftAdd = (node,value)=>{
+	if(!node.children.length){
+		node.value += value;
+		return;
+	}
+	return leftAdd(node.children[0],value);
+}
+const rightAdd = (node,value)=>{
+	if(!node.children.length){
+		node.value += value;
+		return;
+	}
+	return rightAdd(node.children[1],value);
+}
+
 const explode = node=>{
 	let target;
 	if(node.parent){
-		target = node.parent.children[0];
-		if(target === node) target = target.parent.children[1];
-		//addLeftmost(target, node);
+		//left
+		target = node;
+		addLeftMost(target, node.children[0].value);
+		//right
+		target = node;
+		addRightMost(target, node.children[1].value);
 	}
+	node.value = 0;
+	node.children = [];
+	return node;
 }
+
+const checkExplode = (node, depth=0)=>{
+	if(!node) return;
+	if(depth === 5) return node.parent; 
+	return [checkExplode(node.children[0],depth+1),checkExplode(node.children[1],depth+1)];
+}
+
+const checkSplit = (node)=>{
+	if(!node) return;
+	if(!node.children.length){
+		if(node.value > 9) return node;
+		return;
+	}
+	let checkLeft = checkSplit(node.children[0]);
+	if(checkLeft) return checkLeft;
+	return checkSplit(node.children[1]);
+}
+
+const split = node=>{
+	node.children = [new Node(Math.floor(node.value/2),node), new Node(Math.ceil(node.value/2),node)];
+	node.value = undefined;
+}
+
+const getMagnitude = node=>{
+	if(!node.children.length) return node.value;
+	return 3*getMagnitude(node.children[0]) + 2 * getMagnitude(node.children[1]);
+};
 
 const add = (a,b)=>{
-	if(typeof a === "number" && typeof b === "number")
-		return a+b;
-	return [a,b];
+	const newRoot = new Node();
+	a.parent = newRoot;
+	b.parent = newRoot;
+	newRoot.children = [a,b];
+	return newRoot;
 }
 
 
-const reduce = number=>{
+const reduce = node=>{
+	const toExplode = checkExplode(node).flat(Infinity).filter(Boolean)[0];
+	if(toExplode){ 
+		explode(toExplode);
+		return reduce(node);
+	}
+	const toSplit = checkSplit(node);
+	if(toSplit){
+		split(toSplit);
+		return reduce(node);
+	}
+	return node;
 }
+
+//const a = buildTree([[[0,[4,5]],[0,0]],[[[4,5],[2,6]],[9,5]]],new Node())
+//const b = buildTree([7,[[[3,7],[4,3]],[[6,3],[8,8]]]],new Node())
+//const sum = add(a,b);
+//reduce(sum);
+//console.log(JSON.stringify(readTree(sum)));
+
+const sum = trees.reduce((acc,cur)=>reduce(add(acc,cur)));
+
+const magnitude = getMagnitude(sum);	
+
+console.log(JSON.stringify(readTree(sum)));
+console.log(magnitude);
